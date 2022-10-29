@@ -153,16 +153,18 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
 
+	// the client registers itself to the associated hub.
+	// the hub is later used to broadcast messages.
 	client.hub.register <- client
 
 	client.Id = GenUserId()
-
 	client.Addr = conn.RemoteAddr().String()
-
 	client.EnterAt = time.Now()
 
-	// Allow collection of memory referenced by the caller by doing all work in new goroutines.
+	// Handle sending messages to the user.
 	go client.writePump()
+
+	// Handle sending messages to the hub.
 	go client.readPump()
 
 	client.send <- []byte("Welcome")
